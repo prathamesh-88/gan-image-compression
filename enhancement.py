@@ -1,12 +1,12 @@
 import os, time, sys
-from PIL import Image
+from PIL import Image, ImageFilter
 import numpy as np
 import tensorflow as tf, matplotlib.pyplot as plt
-from tensorflow._api.v2 import image
+
 
 ENHANCEMENT_MODEL_PATH = "models/esrgan"
 model = tf.saved_model.load(ENHANCEMENT_MODEL_PATH)
-IMAGE_PATH = sys.argv[1]
+
 
 def preprocess_image(image_path: str):
     hr_image = tf.image.decode_image(tf.io.read_file(image_path))
@@ -19,6 +19,11 @@ def preprocess_image(image_path: str):
 
     # print(hr_size, hr_image)
     return tf.expand_dims(hr_image, 0)
+
+def to_PIL(image) -> Image.Image:
+    image = tf.clip_by_value(image, 0, 255)
+    return Image.fromarray(tf.cast(image, tf.uint8).numpy())
+
 
 def save_image(image, filename):
     if not isinstance(image, Image.Image):
@@ -40,7 +45,6 @@ def plot_image(image, title=""):
     plt.axis("off")
     plt.title(title)
     plt.show()
-
 
 def multi_plot(images, titles=list()):
     if len(images) > 8:
@@ -89,8 +93,14 @@ def psnr_diff(target, original):
         tf.clip_by_value(original, 0, 255),
         max_val= 255
     )
+
+
+def enhance_image(image: Image.Image) -> Image.Image:
+    image = preprocess_image(image)
+    image = use_model(image)
+    return to_PIL(image)
 if __name__ == "__main__":
-    
+    IMAGE_PATH = sys.argv[1]
     hr_image = preprocess_image(IMAGE_PATH)
 
     # plot_image(tf.squeeze(hr_image), "Original Res")
@@ -101,13 +111,14 @@ if __name__ == "__main__":
     save_image(tf.squeeze(lr_image), filename="gen/low_r")
 
     ge_image = use_model(lr_image)    
-    
+    gb = ImageFilter.GaussianBlur()
+    # to_PIL(ge_image).filter(filter=ImageFilter.GaussianBlur(1)).save("gen/super_r.jpg")
 
     # plot_image(tf.squeeze(ge_image), title="Super Res")
     save_image(tf.squeeze(ge_image), filename="gen/super_r")
 
-    print("PSNR Achieved: {}".format(psnr_diff(ge_image, hr_image)))
-    multi_plot([tf.squeeze(hr_image),tf.squeeze(lr_image),tf.squeeze(ge_image)], ["Original", "4x Bicubic", "Super"])
+    print("PSNR Achieved: {}".format(psnr_diff(ge_image, hr_image)[0]))
+    multi_plot([tf.squeeze(hr_image),tf.squeeze(lr_image),tf.squeeze(ge_image)], ["Original", "4x nearest", "Super"])
 
 
 """
