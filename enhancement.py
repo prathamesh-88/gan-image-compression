@@ -57,11 +57,7 @@ def multi_plot(images, titles=list()):
     plt.show()
 
 def downscale_image(image):
-  """
-      Scales down images using bicubic downsampling.
-      Args:
-          image: 3D or 4D tensor of preprocessed image
-  """
+
   image_size = []
   if len(image.shape) == 3:
     image_size = [image.shape[1], image.shape[0]]
@@ -101,6 +97,11 @@ def enhance_image(image: Image.Image) -> Image.Image:
     return to_PIL(image)
 if __name__ == "__main__":
     IMAGE_PATH = sys.argv[1]
+    if len(sys.argv) == 3:
+        hr_image = preprocess_image(IMAGE_PATH)
+        ge_image = use_model(hr_image)
+        save_image(tf.squeeze(ge_image), filename="generated")
+        exit()
     hr_image = preprocess_image(IMAGE_PATH)
 
     # plot_image(tf.squeeze(hr_image), "Original Res")
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     save_image(tf.squeeze(ge_image), filename="gen/super_r")
 
     print("PSNR Achieved: {}".format(psnr_diff(ge_image, hr_image)[0]))
-    multi_plot([tf.squeeze(hr_image),tf.squeeze(lr_image),tf.squeeze(ge_image)], ["Original", "4x nearest", "Super"])
+    multi_plot([tf.squeeze(hr_image),tf.squeeze(lr_image),tf.squeeze(ge_image)], ["Original", "4x Bicubic", "Super"])
 
 
 """
