@@ -1,3 +1,7 @@
 *.h5
+*.pyc
 .venv
 *.ipynb
+__pycache__/
+results
+
