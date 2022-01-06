@@ -48,4 +48,5 @@ class Resizer:
 
 if __name__ == '__main__':
     obj = Resizer()
+    obj.fit('test_images/sample0.jpeg')
     obj.show_result()
