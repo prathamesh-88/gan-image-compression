@@ -4,4 +4,6 @@
 *.ipynb
 __pycache__/
 results
-
+images
+Images
+images.*
