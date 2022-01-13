@@ -1,17 +1,15 @@
 from tiles_gan import gan, tile_size
 from gen_and_aug import datagen
+import os
 
-gan.fit_generator(
+image_path = './images/'
+
+gan.fit(
     datagen(
-        path='../data/train',
-        image_size=tile_size[:-1],
+        path= image_path,
+        image_size=tile_size,
     ),
     steps_per_epoch=10,
-    epochs=10,
-    validation_data=datagen(
-        path='../data/test',
-        image_size=tile_size[:-1],
-    ),
-    validation_steps=10,
+    epochs=10
 )
 

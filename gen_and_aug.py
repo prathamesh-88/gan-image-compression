@@ -24,3 +24,5 @@ def datagen(path, image_size):
 
     return train_generator
 
+if __name__ == '__main__':
+    datagen('./image  ')

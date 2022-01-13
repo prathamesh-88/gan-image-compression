@@ -66,6 +66,7 @@ class TileGAN(keras.Model):
         self.generator = generator
         self.discriminator = discriminator
         self.feature_block_generator = feature_block_generator
+    
     def compile(self, g_optimizer, d_optimizer, loss_fn):
         super(TileGAN, self).compile()
         self.g_optimizer = g_optimizer
@@ -73,6 +74,10 @@ class TileGAN(keras.Model):
         self.loss_fn = loss_fn
         self.g_loss = keras.metrics.Mean(name='g_loss')
         self.d_loss = keras.metrics.Mean(name='d_loss')
+    
+    def call(self,inputs):
+        return self.generator(self.feature_block_generator(inputs))
+
     
     @property
     def metrics(self):
