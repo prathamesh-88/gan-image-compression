@@ -1,4 +1,4 @@
-from tiles_gan import gan, tile_size
+from tiles_gan import gan, tile_size, GANCallBack
 from gen_and_aug import datagen
 import os
 
@@ -12,7 +12,8 @@ if __name__ == "__main__":
             image_size=tile_size,
         ),
         steps_per_epoch=10,
-        epochs=10
+        epochs=10,
+        callbacks=[GANCallBack()]
     )
     gan.save("gan_model")
 
