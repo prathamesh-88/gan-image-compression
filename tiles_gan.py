@@ -4,7 +4,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Model, Sequential
 import os
 
-from tensorflow.keras.utils import plot_model
+# from tensorflow.keras.utils import plot_model
 import numpy as np
 
 tile_size = (128, 128, 3) # (height, width, channels)
@@ -28,7 +28,7 @@ dense_1 = layers.Dense(1)(drop_1)
 
 discriminator = Model(inputs=[fake_image_input, real_image_input], outputs=dense_1)
 discriminator.summary()
-plot_model(discriminator, to_file="discriminator.png", show_shapes=True)
+# plot_model(discriminator, to_file="discriminator.png", show_shapes=True)
 
 # Goal of the discriminator is to distinguish real images from fake images
 # The Discriminator is given a real image and a fake image, and it outputs a real/fake score
@@ -48,7 +48,7 @@ generator = Sequential(
     ]
 )
 generator.summary()
-plot_model(generator, to_file="generator.png", show_shapes=True)
+# plot_model(generator, to_file="generator.png", show_shapes=True)
 
 
 # The Feature Block Generator
@@ -80,8 +80,8 @@ class TileGAN(keras.Model):
         return self.generator(self.feature_block_generator(inputs))
 
     def save(self, folder):
-        self.generator.save(os.path.join(folder + 'model_g.h5'))
-        self.discriminator.save(os.path.join(folder + 'model_d.h5'))
+        self.generator.save(os.path.join(folder , 'model_g.h5'))
+        self.discriminator.save(os.path.join(folder , 'model_d.h5'))
 
     @property
     def metrics(self):
@@ -145,5 +145,5 @@ gan.compile(
     g_optimizer=keras.optimizers.Adam(1e-4),
     d_optimizer=keras.optimizers.Adam(1e-4),
     loss_fn=keras.losses.BinaryCrossentropy(),
-    callbacks=[GANCallBack()]
+   
 )
