@@ -40,8 +40,8 @@ def unzip(name='images.tar'):
 
 def organise():
     files = os.listdir('./Images')
-    if not os.path.exists('./Images/raw'):
-        os.mkdir('./Images/raw')
+    if not os.path.exists('./Images/train'):
+        os.mkdir('./Images/train')
     for i in tqdm(
         desc      = f'Organising Folders',
         iterable  = files,
@@ -50,12 +50,12 @@ def organise():
     ):
         if i[-4:] != '.jpg':
             for j in os.listdir(f'./Images/{i}'):
-                shutil.move(f'./Images/{i}/{j}','./Images/raw/')
+                shutil.move(f'./Images/{i}/{j}','./Images/train/')
             os.rmdir(f'./Images/{i}')
     print('\n')
     os.rename('./Images', './images')
     os.remove('./images.tar')
-    os.mkdir('./images/processed')
+    os.mkdir('./images/test')
 
 
 def namer(x:int, length=6, ext='.jpg'):
@@ -64,7 +64,7 @@ def namer(x:int, length=6, ext='.jpg'):
     
 
 
-def rename(path='./images/raw'):
+def rename(path='./images/train'):
     files = os.listdir(path)
     for i, name in tqdm(
         desc     = 'Renaming files',
