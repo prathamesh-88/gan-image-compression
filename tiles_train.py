@@ -14,4 +14,5 @@ if __name__ == "__main__":
         steps_per_epoch=10,
         epochs=10
     )
+    gan.save("gan_model")
 

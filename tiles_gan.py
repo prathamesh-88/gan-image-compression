@@ -129,8 +129,21 @@ class TileGAN(keras.Model):
     
 gan = TileGAN(generator, discriminator, fb_generator)
 
+
+from tensorflow import keras
+class GANCallBack(keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        self.model.save('gan_model')
+        if logs['g_loss'] < 0.01:
+            self.model.stop_training = True
+            print("Training stopped")
+
+
+
+
 gan.compile(
     g_optimizer=keras.optimizers.Adam(1e-4),
     d_optimizer=keras.optimizers.Adam(1e-4),
     loss_fn=keras.losses.BinaryCrossentropy(),
+    callbacks=[GANCallBack()]
 )
