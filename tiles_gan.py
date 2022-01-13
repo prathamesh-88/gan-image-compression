@@ -80,8 +80,8 @@ class TileGAN(keras.Model):
         return self.generator(self.feature_block_generator(inputs))
 
     def save(self, folder):
-        self.generator.save(os.path.join(folder + 'model_g.h5'))
-        self.discriminator.save(os.path.join(folder + 'model_d.h5'))
+        self.generator.save(os.path.join(folder , 'model_g.h5'))
+        self.discriminator.save(os.path.join(folder , 'model_d.h5'))
 
     @property
     def metrics(self):
