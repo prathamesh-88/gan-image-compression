@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.models import Model, Sequential, load_model
 import os
 
 # from tensorflow.keras.utils import plot_model
@@ -80,9 +80,19 @@ class TileGAN(keras.Model):
         return self.generator(self.feature_block_generator(inputs))
 
     def save(self, folder):
+        if not os.path.exists(folder):
+            os.mkdir(folder)
         self.generator.save(os.path.join(folder , 'model_g.h5'))
         self.discriminator.save(os.path.join(folder , 'model_d.h5'))
 
+    @staticmethod
+    def load(gen_fn: str, disc_fn: str, fb: Model):
+        return TileGAN(
+            generator=load_model(gen_fn),
+            discriminator=load_model(disc_fn),
+            feature_block_generator=fb
+        )
+    
     @property
     def metrics(self):
         return [self.g_loss, self.d_loss]
