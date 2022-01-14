@@ -153,11 +153,11 @@ class GANCallBack(keras.callbacks.Callback):
         # from keras.preprocessing.image import img_to_array
         image = os.path.join("images", "train", "000000.jpg")
         from keras.preprocessing.image import load_img, img_to_array
-        random_latent_vectors = self.model.feature_block_generator(img_to_array(load_img(image)))
+        random_latent_vectors = self.model.feature_block_generator(tf.expand_dims(img_to_array(load_img(image, target_size=tile_size[:-1])), 0))
         generated_images = self.model.generator(random_latent_vectors)
         generated_images *= 255
         generated_images.numpy()
-        img = keras.preprocessing.image.array_to_img(generated_images)
+        img = keras.preprocessing.image.array_to_img(tf.squeeze(generated_images))
         img.save(os.path.join(".", "gen", "generated_img_%03d.png" % (epoch)))
             
 
