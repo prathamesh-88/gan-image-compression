@@ -12,7 +12,7 @@ if __name__ == "__main__":
             image_size=tile_size,
         ),
         steps_per_epoch=10,
-        epochs=10,
+        epochs=20,
         callbacks=[GANCallBack()]
     )
     

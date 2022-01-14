@@ -149,6 +149,18 @@ class GANCallBack(keras.callbacks.Callback):
             print("Training stopped")
 
 
+    def on_epoch_begin(self, epoch):
+        from keras.preprocessing.image import img_to_array
+        image = os.path.join("images", "train", "000000.jpg")
+        random_latent_vectors = self.model.feature_block_generator(img_to_array(image))
+        generated_images = self.model.generator(random_latent_vectors)
+        generated_images *= 255
+        generated_images.numpy()
+        img = keras.preprocessing.image.array_to_img(generated_images)
+        img.save(os.path.join(".", "gen", "generated_img_%03d.png" % (epoch)))
+            
+
+
 
 
 gan.compile(
