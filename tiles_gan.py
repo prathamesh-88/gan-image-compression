@@ -118,7 +118,7 @@ class TileGAN(keras.Model):
         labels += 0.05 * tf.random.uniform(tf.shape(labels))
 
         with tf.GradientTape() as disc_tape:
-            disc_output = self.discriminator(np.array([com_images, ref_images]))
+            disc_output = self.discriminator([com_images, ref_images])
             disc_loss = self.loss_fn(labels, disc_output)
         disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
         self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_weights))
