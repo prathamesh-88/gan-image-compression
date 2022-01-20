@@ -21,7 +21,7 @@ leaky_fi = layers.LeakyReLU(alpha=0.2)(conv_fi)
 conv_fi = layers.Conv2D(128, kernel_size=4, strides=2, padding="same")(leaky_fi)
 leaky_fi = layers.LeakyReLU(alpha=0.2)(conv_fi)
 concat = layers.Concatenate()([leaky_ri, leaky_fi])
-# conv_c = layers.Conv2D(128, kernel_size=3, padding="same")(concat)                  #(Debugging)
+# conv_c = layers.Conv2D(128, kernel_size=3, padding="same")(concat)                  # DEBUG
 flatten_1 = layers.Flatten()(concat)
 drop_1 = layers.Dropout(0.2)(flatten_1)
 dense_1 = layers.Dense(1)(drop_1)
@@ -33,7 +33,18 @@ discriminator.summary()
 # Goal of the discriminator is to distinguish real images from fake images
 # The Discriminator is given a real image and a fake image, and it outputs a real/fake score
 
-feature_block_dim = (2, 2, 2048)
+
+# The Feature Block Generator
+from tensorflow.keras.applications import InceptionV3, VGG16
+
+
+fb_generator = InceptionV3(include_top=False, weights='imagenet', input_shape=tile_size)
+# fb_generator = VGG16(include_top=False, weights='imagenet', input_shape=tile_size)
+
+
+
+
+feature_block_dim = fb_generator.output_shape[1:]
 
 generator = Sequential(
     [
@@ -49,13 +60,6 @@ generator = Sequential(
 )
 generator.summary()
 # plot_model(generator, to_file="generator.png", show_shapes=True)
-
-
-# The Feature Block Generator
-from tensorflow.keras.applications import InceptionV3
-
-
-fb_generator = InceptionV3(include_top=False, weights='imagenet', input_shape=tile_size)
 
 
 
@@ -114,7 +118,7 @@ class TileGAN(keras.Model):
         labels += 0.05 * tf.random.uniform(tf.shape(labels))
 
         with tf.GradientTape() as disc_tape:
-            disc_output = self.discriminator([com_images, ref_images])
+            disc_output = self.discriminator(np.array([com_images, ref_images]))
             disc_loss = self.loss_fn(labels, disc_output)
         disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
         self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_weights))
@@ -144,7 +148,7 @@ from tensorflow import keras
 class GANCallBack(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         self.model.save('gan_model')
-        if logs['g_loss'] < 0.01:
+        if logs['g_loss'] < 0.01 and logs['d_loss'] < 0.01:
             self.model.stop_training = True
             print("Training stopped")
 
