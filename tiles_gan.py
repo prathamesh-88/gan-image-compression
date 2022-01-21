@@ -46,30 +46,49 @@ discriminator.summary()
 # The Feature Block Generator
 
 
+model = "VGG"
 
-fb_generator = InceptionV3(include_top=False, weights='imagenet', input_shape=tile_size)
-# fb_generator = VGG16(include_top=False, weights='imagenet', input_shape=tile_size)
+if model == "Inception":
+    fb_generator = InceptionV3(include_top=False, weights='imagenet', input_shape=tile_size)
+    feature_block_dim = fb_generator.output_shape[1:]
+
+    generator = Sequential(
+        [
+            layers.Input(shape=feature_block_dim),
+            layers.Conv2DTranspose(128, kernel_size=4, strides=4, padding="same"),
+            layers.LeakyReLU(alpha=0.2),
+            layers.Conv2DTranspose(256, kernel_size=4, strides=4, padding="same"),
+            layers.LeakyReLU(alpha=0.2),
+            layers.Conv2DTranspose(512, kernel_size=4, strides=4, padding="same"),
+            layers.LeakyReLU(alpha=0.2),
+            layers.Conv2D(3, kernel_size=5, padding="same", activation="sigmoid"),
+        ]
+    )
+
+elif model == "VGG":
+    fb_generator = VGG16(include_top=False, weights='imagenet', input_shape=tile_size)
+    feature_block_dim = fb_generator.output_shape[1:]
+
+    generator = Sequential(
+        [
+            layers.Input(shape=feature_block_dim),
+            layers.Conv2DTranspose(128, kernel_size=4, strides=4, padding="same"),
+            layers.LeakyReLU(alpha=0.2),
+            layers.Conv2DTranspose(256, kernel_size=4, strides=4, padding="same"),
+            layers.LeakyReLU(alpha=0.2),
+            layers.Conv2DTranspose(512, kernel_size=4, strides=2, padding="same"),
+            layers.LeakyReLU(alpha=0.2),
+            layers.Conv2D(3, kernel_size=5, padding="same", activation="sigmoid"),
+        ]
+    )
 
 
 
-
-feature_block_dim = fb_generator.output_shape[1:]
-
-generator = Sequential(
-    [
-        layers.Input(shape=feature_block_dim),
-        layers.Conv2DTranspose(128, kernel_size=4, strides=4, padding="same"),
-        layers.LeakyReLU(alpha=0.2),
-        layers.Conv2DTranspose(256, kernel_size=4, strides=4, padding="same"),
-        layers.LeakyReLU(alpha=0.2),
-        layers.Conv2DTranspose(512, kernel_size=4, strides=4, padding="same"),
-        layers.LeakyReLU(alpha=0.2),
-        layers.Conv2D(3, kernel_size=5, padding="same", activation="sigmoid"),
-    ]
-)
 generator.summary()
-# plot_model(generator, to_file="generator.png", show_shapes=True)
 
+
+
+# plot_model(generator, to_file="generator.png", show_shapes=True)
 
 
 
@@ -98,13 +117,10 @@ class TileGAN(keras.Model):
         self.generator.save(os.path.join(folder , 'model_g.h5'))
         self.discriminator.save(os.path.join(folder , 'model_d.h5'))
 
-    @staticmethod
-    def load(gen_fn: str, disc_fn: str, fb: Model):
-        return TileGAN(
-            generator=load_model(gen_fn),
-            discriminator=load_model(disc_fn),
-            feature_block_generator=fb
-        )
+    
+    def load(self, file_path: str):
+        self.generator = load_model(os.path.join(file_path, 'model_g.h5'))
+        self.discriminator = load_model(os.path.join(file_path, 'model_d.h5'))
     
     @property
     def metrics(self):
