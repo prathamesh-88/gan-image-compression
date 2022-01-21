@@ -46,7 +46,7 @@ discriminator.summary()
 # The Feature Block Generator
 
 
-model = "VGG"
+model = "Inception"
 
 if model == "Inception":
     fb_generator = InceptionV3(include_top=False, weights='imagenet', input_shape=tile_size)
