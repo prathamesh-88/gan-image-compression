@@ -128,8 +128,9 @@ class TileGAN(keras.Model):
     
     def train_step(self, real_images):
         batch_size = tf.shape(real_images)[0]
+        shape = (batch_size, *self.feature_block_generator.output_shape[1:])
         # latent_blocks = self.feature_block_generator(real_images)
-        latent_blocks = np.random.random(self.feature_block_generator.output_shape)
+        latent_blocks = np.random.random(shape)
 
         
         # Training Discriminator
