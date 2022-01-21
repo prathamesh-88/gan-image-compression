@@ -15,7 +15,7 @@ if __name__ == "__main__":
             path= image_path,
             image_size=tile_size,
         ),
-        batch_size=1,
+        # batch_size=10,
         # steps_per_epoch=10,
         epochs=20,
         callbacks=[GANCallBack()]
