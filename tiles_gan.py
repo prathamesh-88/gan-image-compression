@@ -7,6 +7,15 @@ import os
 # from tensorflow.keras.utils import plot_model
 import numpy as np
 
+
+
+gpus = tf.config.experimental.list_physical_devices('GPU') 
+tf.config.experimental.set_memory_growth(gpus[0], True)
+
+from tensorflow.keras.applications import InceptionV3, VGG16
+
+
+
 tile_size = (128, 128, 3) # (height, width, channels)
 
 # Models
@@ -35,7 +44,7 @@ discriminator.summary()
 
 
 # The Feature Block Generator
-from tensorflow.keras.applications import InceptionV3, VGG16
+
 
 
 fb_generator = InceptionV3(include_top=False, weights='imagenet', input_shape=tile_size)
@@ -106,7 +115,8 @@ class TileGAN(keras.Model):
         latent_blocks = self.feature_block_generator(real_images)
 
         # Training Discriminator
-        gen_images = self.generator(latent_blocks)
+        with tf.device('/cpu:0'):
+            gen_images = self.generator(latent_blocks)
         com_images = tf.concat([real_images, gen_images], axis=0)
         ref_images = tf.concat([real_images, real_images], axis=0)
 
@@ -118,7 +128,8 @@ class TileGAN(keras.Model):
         labels += 0.05 * tf.random.uniform(tf.shape(labels))
 
         with tf.GradientTape() as disc_tape:
-            disc_output = self.discriminator([com_images, ref_images])
+            with tf.device('/cpu:0'):
+                disc_output = self.discriminator([com_images, ref_images])
             disc_loss = self.loss_fn(labels, disc_output)
         disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
         self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_weights))
@@ -126,7 +137,8 @@ class TileGAN(keras.Model):
         gen_labels = tf.zeros((batch_size, 1))
 
         with tf.GradientTape() as gen_tape:
-            disc_output = self.discriminator([self.generator(latent_blocks), real_images])
+            with tf.device('/cpu:0'):
+                disc_output = self.discriminator([self.generator(latent_blocks), real_images])
             gen_loss = self.loss_fn(gen_labels, disc_output)
         gen_grads = gen_tape.gradient(gen_loss, self.generator.trainable_weights)
         self.g_optimizer.apply_gradients(zip(gen_grads, self.generator.trainable_weights))
@@ -158,7 +170,8 @@ class GANCallBack(keras.callbacks.Callback):
         image = os.path.join("images", "train", "000000.jpg")
         from keras.preprocessing.image import load_img, img_to_array
         random_latent_vectors = self.model.feature_block_generator(tf.expand_dims(img_to_array(load_img(image, target_size=tile_size[:-1])), 0))
-        generated_images = self.model.generator(random_latent_vectors)
+        with tf.device('/cpu:0'):
+            generated_images = self.model.generator(random_latent_vectors)
         generated_images *= 255
         generated_images.numpy()
         img = keras.preprocessing.image.array_to_img(tf.squeeze(generated_images))
