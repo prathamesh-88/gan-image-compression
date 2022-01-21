@@ -119,8 +119,8 @@ class TileGAN(keras.Model):
 
     
     def load(self, file_path: str):
-        self.generator = load_model(os.path.join(file_path, 'model_g.h5'))
-        self.discriminator = load_model(os.path.join(file_path, 'model_d.h5'))
+        self.generator = load_model(os.path.join(file_path, 'model_g.h5'), compile=False)
+        self.discriminator = load_model(os.path.join(file_path, 'model_d.h5'), compile=False)
     
     @property
     def metrics(self):
@@ -153,8 +153,7 @@ class TileGAN(keras.Model):
         gen_labels = tf.zeros((batch_size, 1))
 
         with tf.GradientTape() as gen_tape:
-            with tf.device('/cpu:0'):
-                disc_output = self.discriminator([self.generator(latent_blocks), real_images])
+            disc_output = self.discriminator([self.generator(latent_blocks), real_images])
             gen_loss = self.loss_fn(gen_labels, disc_output)
         gen_grads = gen_tape.gradient(gen_loss, self.generator.trainable_weights)
         self.g_optimizer.apply_gradients(zip(gen_grads, self.generator.trainable_weights))
@@ -173,6 +172,15 @@ gan = TileGAN(generator, discriminator, fb_generator)
 
 
 from tensorflow import keras
+from tensorflow.keras.callbacks import EarlyStopping
+
+
+early_stop = EarlyStopping(
+    monitor  = 'g_loss',
+    mode     = 'min',
+    patience = 10,
+    verbose  = 2
+)
 class GANCallBack(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         self.model.save('gan_model')
