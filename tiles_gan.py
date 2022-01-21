@@ -128,8 +128,10 @@ class TileGAN(keras.Model):
     
     def train_step(self, real_images):
         batch_size = tf.shape(real_images)[0]
-        latent_blocks = self.feature_block_generator(real_images)
+        # latent_blocks = self.feature_block_generator(real_images)
+        latent_blocks = np.random.random(self.feature_block_generator.output_shape)
 
+        
         # Training Discriminator
         with tf.device('/cpu:0'):
             gen_images = self.generator(latent_blocks)
@@ -141,11 +143,11 @@ class TileGAN(keras.Model):
         )
 
         # introduce noise
-        labels += 0.05 * tf.random.uniform(tf.shape(labels))
+        # labels += 0.05 * tf.random.uniform(tf.shape(labels))
 
         with tf.GradientTape() as disc_tape:
-            with tf.device('/cpu:0'):
-                disc_output = self.discriminator([com_images, ref_images])
+            # with tf.device('/cpu:0'):
+            disc_output = self.discriminator([com_images, ref_images])
             disc_loss = self.loss_fn(labels, disc_output)
         disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
         self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_weights))
