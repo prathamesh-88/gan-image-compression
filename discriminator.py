@@ -37,15 +37,19 @@ cv2 = layers.Conv2D(64, kernel_size=5, strides=2, padding='same')(cv1_lr_d)
 cv2_lr = layers.LeakyReLU(alpha=.2)(cv2)
 cv2_lr_d = layers.Dropout(.3)(cv2_lr)
 
-cv3 = layers.Conv2D(16, kernel_size=3, strides=2, padding='same')(cv2_lr_d)
+cv3 = layers.Conv2D(32, kernel_size=3, strides=2, padding='same')(cv2_lr_d)
 cv3_lr = layers.LeakyReLU(alpha=.2)(cv3)
 cv3_lr_d = layers.Dropout(.3)(cv3_lr)
 
-cv4 = layers.Conv2D(8, kernel_size=3, strides=1, padding='same')(cv3_lr_d)
+cv4 = layers.Conv2D(16, kernel_size=3, strides=2)(cv3_lr_d)
 cv4_lr = layers.LeakyReLU(alpha=.2)(cv4)
 cv4_lr_d = layers.Dropout(.3)(cv4_lr)
 
-cv_op = tf.nn.tanh(cv4_lr_d)
+cv5 = layers.Conv2D(8, kernel_size=3, strides=2)(cv4_lr_d)
+cv5_lr = layers.LeakyReLU(alpha=.2)(cv5)
+cv5_lr_d = layers.Dropout(.3)(cv5_lr)
+
+cv_op = tf.nn.tanh(cv5_lr_d)
 fl = layers.Flatten()(cv_op)
 dd1 = layers.Dense(1000, activation='sigmoid')(fl)
 dd2 = layers.Dense(100, activation='sigmoid')(dd1)
