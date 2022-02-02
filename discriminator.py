@@ -58,7 +58,7 @@ dd3 = layers.Dense(1, activation='sigmoid')(dd2)
 
 model = Model(inputs=[lv, ri], outputs=dd3)
 
-
-print(model.summary())
-# plot model
-# tf.keras.utils.plot_model(model, to_file='discriminator.png', show_shapes=True)
+if __name__ == "__main__":
+    print(model.summary())
+    # plot model
+    tf.keras.utils.plot_model(model, to_file='diagrams/discriminator.png', show_shapes=True)
