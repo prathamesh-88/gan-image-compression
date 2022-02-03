@@ -1,5 +1,5 @@
-## Tasks
-- [ ] Import VGG and Inception models
-- [ ] Add links for dataset in the preprocessing file
-- [ ] Create the model using keras with implements both the pretrained models, and concatenate their outputs
-- [X] Create a API for the model 
+## Changes to original model
+
+- 'Same' padding instead of zero padding.
+- Reflection padding skipped
+- d_up_conv_1 = 2

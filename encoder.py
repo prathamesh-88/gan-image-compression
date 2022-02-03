@@ -10,6 +10,8 @@ class Encoder(keras.Model):
     def __init__(self, encoder_channels=27, input_shape=(256,256,3)):
         super(Encoder, self).__init__()
         
+        self.dim = input_shape;
+        
         # Input: 256x256x3 / Output: 128x128x64
         self.conv1 = Sequential(
             [
@@ -82,12 +84,22 @@ class Encoder(keras.Model):
         
         
         return layer_6
+    
+    def build_graph(self):
+        x = layers.Input(shape=(self.dim))
+        return keras.Model(inputs=[x], outputs=self.call(x))
         
         
 if __name__=='__main__':
     input_shape = (None, 256, 256,3)
     encoder = Encoder(input_shape=input_shape[1:])
-    encoder.build(input_shape)
+    # encoder.build(input_shape)
+    # tf.keras.utils.plot_model(
+    #     encoder.build_graph(),                      # here is the trick (for now)
+    #     to_file='./diagrams/encoder.png', dpi=96,              # saving  
+    #     show_shapes=True, show_layer_names=True,  # show shapes and layer name
+    #     expand_nested=False                       # will show nested block
+    # )
     encoder.summary()
 
 
