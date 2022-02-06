@@ -5,7 +5,6 @@ import os
 
 IMAGE_SIZE = (256, 256, 3)
 LATENT_CHANNELS = 27
-
 # Assuming Latent shape to be (64, 64, LATENT_CHANNELS)
 
 # ---------------- Callback to save weights ----------------
@@ -16,8 +15,8 @@ We should use checkpoints to save weights
 
 
 # ---------------- Discriminator Model ----------------
-lv = layers.Input(shape= (32, 32, LATENT_CHANNELS))
-ll1 = layers.Conv2DTranspose(12, (3, 3), strides=2, padding='same')(lv)
+lv = layers.Input(shape= (64, 64, LATENT_CHANNELS))
+ll1 = layers.Conv2DTranspose(12, (3, 3), strides=1, padding='same')(lv)
 ll1_lr = layers.LeakyReLU(alpha=.2)(ll1)
 ll2 = layers.Conv2DTranspose(16, (3, 3), strides=2, padding='same')(ll1_lr)
 ll2_lr = layers.LeakyReLU(alpha=.2)(ll2)

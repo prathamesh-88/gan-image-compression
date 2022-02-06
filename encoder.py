@@ -93,7 +93,7 @@ class Encoder(keras.Model):
 if __name__=='__main__':
     input_shape = (None, 256, 256,3)
     encoder = Encoder(input_shape=input_shape[1:])
-    # encoder.build(input_shape)
+    encoder.build(input_shape)
     # tf.keras.utils.plot_model(
     #     encoder.build_graph(),                      # here is the trick (for now)
     #     to_file='./diagrams/encoder.png', dpi=96,              # saving  
