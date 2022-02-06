@@ -50,8 +50,8 @@ class GAN:
                 
                 disc_loss = self.d_loss(label, output)
             
-            grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
-            self.d_optimizer.apply_gradients(zip(grads, self.discriminator.trainable_weights))
+            disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
+            self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_weights))
 
             # ------------------- Disc Training End
 
@@ -64,8 +64,25 @@ class GAN:
                 output = self.discriminator(inp_x_fake)
 
                 gen_loss = self.b_loss(output, label) + 2 * self.l_loss(real_images, fake_images)
-                
 
+            gen_grads = gen_tape.gradient(gen_loss, self.generator.trainable_weights)
+            self.g_optimizer.apply_gradients(zip(gen_grads, self.generator.trainable_weights))
+
+
+            with tf.GradientTape() as enc_tape:
+                enc_img = self.encoder(real_images)
+                fake_images = self.generator(enc_img)
+                inp_x_fake = [enc_img, fake_images]
+
+                output = self.discriminator(inp_x_fake)
+
+                enc_loss = self.b_loss(output, label) + 2 * self.l_loss(real_images, fake_images)
+            
+            enc_grads = enc_tape.gradient(enc_loss, self.encoder.trainable_weights)
+            self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_weights))
+
+
+            # ----------------------- DONE STEP
 
 
 
