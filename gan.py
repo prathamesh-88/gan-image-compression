@@ -11,9 +11,10 @@ from encoder import Encoder
 from discriminator import IMAGE_SIZE, LATENT_CHANNELS, model as disc
 from tensorflow.keras.utils import array_to_img
 from datetime import datetime
-
+from PIL import Image
 
 enc = Encoder(LATENT_CHANNELS, IMAGE_SIZE)
+
 
 
 class GAN:
@@ -92,9 +93,15 @@ class GAN:
             self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_weights))
 
             if step_ % 100 == 0:
-                img = gen(enc(real_images[:1]))[0]
-                print(type(img))
-                image = array_to_img(img)
+                
+                import os
+                image = os.path.join("images", "train", "000000.jpg")
+                from keras.preprocessing.image import load_img, img_to_array
+                
+                img = self.generator(self.encoder(tf.expand_dims(img_to_array(load_img(image, target_size=[256, 256])), 0)))
+                img *= 255
+                img.numpy()
+                image = array_to_img(tf.squeeze(img))
                 image.save(f'./results/Epoch-{step_}-{str(datetime.now())}')
 
             # ----------------------- DONE STEP
