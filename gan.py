@@ -25,13 +25,13 @@ class GAN:
         self.b_loss = losses['BCE']
         self.l_loss = losses['L1']
         self.d_loss = losses['discriminator']
-        self.compile = True
+        self.compileT = True
     
     @tf.function
     def train_epoch(self, dataset):
-        if not compile:
+        if not self.compileT:
             raise Exception('GAN not compiled')
-        for step, (real_images) in enumerate(dataset):
+        for step_, (real_images) in enumerate(dataset):
 
             fake_images = self.generator(self.encoder(real_images))
 
