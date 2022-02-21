@@ -2,11 +2,15 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Optimizer
+from tensorflow.keras.regularizers import l1
 from tensorflow.keras.losses import Loss
 import numpy as np
+from tqdm import tqdm
 from generator import INPUT_SHAPE as ENC_OUT_SHAPE, model as gen
 from encoder import Encoder
 from discriminator import IMAGE_SIZE, LATENT_CHANNELS, model as disc
+from tensorflow.keras.utils import array_to_img
+from datetime import datetime
 
 
 enc = Encoder(LATENT_CHANNELS, IMAGE_SIZE)
@@ -17,7 +21,7 @@ class GAN:
         self.encoder = encoder
         self.generator = generator
         self.discriminator = discriminator
-        self.compile = False
+        self.compileT = False
     def compile(self, optimizers: dict[str, Optimizer], losses: dict[str, Loss]):
         self.e_optimizer = optimizers['encoder']
         self.g_optimizer = optimizers['generator']
@@ -31,7 +35,7 @@ class GAN:
     def train_epoch(self, dataset):
         if not self.compileT:
             raise Exception('GAN not compiled')
-        for step_, (real_images) in enumerate(dataset):
+        for step_, (real_images) in tqdm(enumerate(dataset)):
 
             fake_images = self.generator(self.encoder(real_images))
 
@@ -41,7 +45,7 @@ class GAN:
             inp_x_fake = [self.encoder(real_images), fake_images]
             label_fake = tf.random.uniform(minval=0.005, maxval=.155, shape=[real_images.shape[0], 1])
 
-            input_images = list(map(lambda x, y: tf.concat([x, y], axis=0) ,zip(inp_x, inp_x_fake)))
+            input_images = list(map(lambda x: tf.concat([x[0], x[1]], axis=0) ,zip(inp_x, inp_x_fake)))
             label = tf.concat([label_real, label_fake], axis=0)
 
 
@@ -62,8 +66,13 @@ class GAN:
                 fake_images = self.generator(enc_img)
                 inp_x_fake = [enc_img, fake_images]
                 output = self.discriminator(inp_x_fake)
+                # print(f"{output.shape} ~ {label.shape}")
+                # print(f"{real_images.shape} ~ {tf.reshape(fake_images, [None, -1])} = {self.l_loss(real_images, fake_images).shape}")
+                lr_i = tf.reshape(real_images, [real_images.shape[0], -1])
+                lf_i = tf.reshape(fake_images, [fake_images.shape[0], -1])
+                # print(lr_i.shape, lf_i.shape)
+                gen_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
 
-                gen_loss = self.b_loss(output, label) + 2 * self.l_loss(real_images, fake_images)
 
             gen_grads = gen_tape.gradient(gen_loss, self.generator.trainable_weights)
             self.g_optimizer.apply_gradients(zip(gen_grads, self.generator.trainable_weights))
@@ -75,12 +84,18 @@ class GAN:
                 inp_x_fake = [enc_img, fake_images]
 
                 output = self.discriminator(inp_x_fake)
-
-                enc_loss = self.b_loss(output, label) + 2 * self.l_loss(real_images, fake_images)
+                lr_i = tf.reshape(real_images, [real_images.shape[0], -1])
+                lf_i = tf.reshape(fake_images, [fake_images.shape[0], -1])
+                enc_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
             
             enc_grads = enc_tape.gradient(enc_loss, self.encoder.trainable_weights)
             self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_weights))
 
+            if step_ % 100 == 0:
+                img = gen(enc(real_images[:1]))[0]
+                print(type(img))
+                image = array_to_img(img)
+                image.save(f'./results/Epoch-{step_}-{str(datetime.now())}')
 
             # ----------------------- DONE STEP
 
