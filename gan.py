@@ -15,12 +15,6 @@ from PIL import Image
 import os
 
 enc = Encoder(LATENT_CHANNELS, IMAGE_SIZE)
-
-gpus = tf.config.experimental.list_physical_devices('GPU') 
-if len(gpus) > 0:
-    tf.config.experimental.set_memory_growth(gpus[0], True)
-tf.config.run_functions_eagerly(True)
-
 class GAN:
     def __init__(self, encoder: Model, generator: Model, discriminator: Model):
         self.encoder = encoder
