@@ -10,12 +10,16 @@ from generator import INPUT_SHAPE as ENC_OUT_SHAPE, model as gen
 from encoder import Encoder
 from discriminator import IMAGE_SIZE, LATENT_CHANNELS, model as disc
 from tensorflow.keras.utils import array_to_img
-from datetime import datetime
+from datetime import date
 from PIL import Image
+import os
 
 enc = Encoder(LATENT_CHANNELS, IMAGE_SIZE)
 
-
+gpus = tf.config.experimental.list_physical_devices('GPU') 
+if len(gpus) > 0:
+    tf.config.experimental.set_memory_growth(gpus[0], True)
+tf.config.run_functions_eagerly(True)
 
 class GAN:
     def __init__(self, encoder: Model, generator: Model, discriminator: Model):
@@ -92,18 +96,20 @@ class GAN:
             enc_grads = enc_tape.gradient(enc_loss, self.encoder.trainable_weights)
             self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_weights))
 
-            if step_ % 100 == 0:
+            if step_ % 50 == 0:
+                sample_image = real_images[:1]
+                # print(f'Sample Image: {sample_image.shape}')
+                encoded_sample_image = enc(sample_image)
+                # print(f'Encoded Image: {encoded_sample_image.shape}')
+                generated_sample_image = gen(encoded_sample_image)[0]
+                generated_sample_image *= 255
+                real_image = real_images[0] *255
+                # print(f'Generated Image: {generated_sample_image.shape}')
+                # print(f'Get Image: {generated_sample_image[0].shape}')
+                compare = np.hstack([real_image, generated_sample_image])
+                # print(type(real_images[0]))
+                array_to_img(compare).save(f'results/{str(date.today())}_generated_image_{step_}.png')
                 
-                import os
-                image = os.path.join("images", "train", "000000.jpg")
-                from keras.preprocessing.image import load_img, img_to_array
-                
-                img = self.generator(self.encoder(tf.expand_dims(img_to_array(load_img(image, target_size=[256, 256])), 0)))
-                img *= 255
-                img.numpy()
-                image = array_to_img(tf.squeeze(img))
-                image.save(f'./results/Epoch-{step_}-{str(datetime.now())}')
-
             # ----------------------- DONE STEP
 
 
