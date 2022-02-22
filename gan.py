@@ -13,87 +13,111 @@ from tensorflow.keras.utils import array_to_img
 from datetime import date
 from PIL import Image
 import os
+from gen_and_aug import batch_size
 
 enc = Encoder(LATENT_CHANNELS, IMAGE_SIZE)
-class GAN:
+class GAN(keras.Model):
     def __init__(self, encoder: Model, generator: Model, discriminator: Model):
+        super(GAN, self).__init__()
         self.encoder = encoder
         self.generator = generator
         self.discriminator = discriminator
-        self.compileT = False
+    
+    
     def compile(self, optimizers: dict[str, Optimizer], losses: dict[str, Loss]):
+        super(GAN, self).compile()
         self.e_optimizer = optimizers['encoder']
         self.g_optimizer = optimizers['generator']
         self.d_optimizer = optimizers['discriminator']
         self.b_loss = losses['BCE']
         self.l_loss = losses['L1']
         self.d_loss = losses['discriminator']
-        self.compileT = True
+        self.enc_loss = keras.metrics.Mean(name='e_loss')
+        self.gen_loss = keras.metrics.Mean(name='g_loss')
+        self.disc_loss = keras.metrics.Mean(name='d_loss')
     
-    @tf.function
-    def train_epoch(self, dataset, epoch):
-        if not self.compileT:
-            raise Exception('GAN not compiled')
-        for step_, (real_images) in tqdm(enumerate(dataset)):
-
-            fake_images = self.generator(self.encoder(real_images))
-
-            inp_x = [self.encoder(real_images), real_images]
-            label_real = tf.random.uniform(minval=.855, maxval=.999, shape=[real_images.shape[0], 1])
-
-            inp_x_fake = [self.encoder(real_images), fake_images]
-            label_fake = tf.random.uniform(minval=0.005, maxval=.155, shape=[real_images.shape[0], 1])
-
-            input_images = list(map(lambda x: tf.concat([x[0], x[1]], axis=0) ,zip(inp_x, inp_x_fake)))
-            label = tf.concat([label_real, label_fake], axis=0)
-
-
-            with tf.GradientTape() as disc_tape:
-                output = self.discriminator(input_images)
-                
-                disc_loss = self.d_loss(label, output)
+        
+    def call(self,inputs):
+        return self.generator(self.encoder(inputs))
             
-            disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
-            self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_weights))
+    @property
+    def metrics(self):
+        return [self.gen_loss, self.enc_loss, self.disc_loss]
+    
+    def train_step(self, real_images):
+        fake_images = self.generator(self.encoder(real_images))
 
-            # ------------------- Disc Training End
+        inp_x = [self.encoder(real_images), real_images]
 
-            label = tf.random.uniform(minval=.895, maxval=.999, shape=[real_images.shape[0], 1])
+        label_real = tf.random.uniform(minval=.855, maxval=.999, shape=[batch_size, 1])
 
-            with tf.GradientTape() as gen_tape:
-                enc_img = self.encoder(real_images)
-                fake_images = self.generator(enc_img)
-                inp_x_fake = [enc_img, fake_images]
-                output = self.discriminator(inp_x_fake)
-                # print(f"{output.shape} ~ {label.shape}")
-                # print(f"{real_images.shape} ~ {tf.reshape(fake_images, [None, -1])} = {self.l_loss(real_images, fake_images).shape}")
-                lr_i = tf.reshape(real_images, [real_images.shape[0], -1])
-                lf_i = tf.reshape(fake_images, [fake_images.shape[0], -1])
-                # print(lr_i.shape, lf_i.shape)
-                gen_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
+        inp_x_fake = [self.encoder(real_images), fake_images]
+        label_fake = tf.random.uniform(minval=0.005, maxval=.155, shape=[batch_size, 1])
+
+        input_images = list(map(lambda x: tf.concat([x[0], x[1]], axis=0) ,zip(inp_x, inp_x_fake)))
+        label = tf.concat([label_real, label_fake], axis=0)
 
 
-            gen_grads = gen_tape.gradient(gen_loss, self.generator.trainable_weights)
-            self.g_optimizer.apply_gradients(zip(gen_grads, self.generator.trainable_weights))
+        with tf.GradientTape() as disc_tape:
+            output = self.discriminator(input_images)
+            disc_loss = self.d_loss(label, output)
+        
+        disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_weights)
+        self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_weights))
+
+        # ------------------- Disc Training End
+
+        label = tf.random.uniform(minval=.895, maxval=.999, shape=[batch_size, 1])
+
+        with tf.GradientTape() as gen_tape:
+            enc_img = self.encoder(real_images)
+            fake_images = self.generator(enc_img)
+            inp_x_fake = [enc_img, fake_images]
+            output = self.discriminator(inp_x_fake)
+            # print(f"{output.shape} ~ {label.shape}")
+            # print(f"{real_images.shape} ~ {tf.reshape(fake_images, [None, -1])} = {self.l_loss(real_images, fake_images).shape}")
+            lr_i = tf.reshape(real_images, [batch_size, -1])
+            lf_i = tf.reshape(fake_images, [batch_size, -1])
+            # print(lr_i.shape, lf_i.shape)
+            gen_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
 
 
-            with tf.GradientTape() as enc_tape:
-                enc_img = self.encoder(real_images)
-                fake_images = self.generator(enc_img)
-                inp_x_fake = [enc_img, fake_images]
+        gen_grads = gen_tape.gradient(gen_loss, self.generator.trainable_weights)
+        self.g_optimizer.apply_gradients(zip(gen_grads, self.generator.trainable_weights))
 
-                output = self.discriminator(inp_x_fake)
-                lr_i = tf.reshape(real_images, [real_images.shape[0], -1])
-                lf_i = tf.reshape(fake_images, [fake_images.shape[0], -1])
-                enc_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
-            
-            enc_grads = enc_tape.gradient(enc_loss, self.encoder.trainable_weights)
-            self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_weights))
 
+        with tf.GradientTape() as enc_tape:
+            enc_img = self.encoder(real_images)
+            fake_images = self.generator(enc_img)
+            inp_x_fake = [enc_img, fake_images]
+
+            output = self.discriminator(inp_x_fake)
+            lr_i = tf.reshape(real_images, [batch_size, -1])
+            lf_i = tf.reshape(fake_images, [batch_size, -1])
+            enc_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
+        
+        enc_grads = enc_tape.gradient(enc_loss, self.encoder.trainable_weights)
+        self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_weights))
+        
+        self.disc_loss.update_state(disc_loss)
+        self.gen_loss.update_state(gen_loss)
+        self.enc_loss.update_state(enc_loss)
+        
+        return {
+            'g_loss': self.gen_loss.result(),
+            'e_loss': self.enc_loss.result(),
+            'd_loss': self.disc_loss.result(),
+        }
 
                 
             # ----------------------- DONE STEP
-
+class GANCallBack(keras.callbacks.Callback):
+    def on_epoch_begin(self, epoch, logs=None):
+        print("Screw it! I'm going to train my GAN!")
+        self.model.generator.save_weights(f"gan_weights/generator_weights_{epoch}.h5")
+        self.model.encoder.save_weights(f"gan_weights/encoder_weights_{epoch}.h5")
+        self.model.discriminator.save_weights(f"gan_weights/discriminator_weights_{epoch}.h5")
+        
 
 
 
