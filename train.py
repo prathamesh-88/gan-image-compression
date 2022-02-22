@@ -16,11 +16,11 @@ gan.compile({
     "discriminator": binary_crossentropy,
 })
 
-epochs = 10
+epochs = 20
 dataset = datagen("./images", IMAGE_SIZE)
 for i in range(epochs):
     print("Epoch:", i)
-    gan.train_epoch(dataset)
+    gan.train_epoch(dataset, i)
     gan.generator.save_weights(f"gan_weights/gan_weights_{i}.h5")
     gan.encoder.save_weights(f"gan_weights/encoder_weights_{i}.h5")
     gan.discriminator.save_weights(f"gan_weights/discriminator_weights_{i}.h5")

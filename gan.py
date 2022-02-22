@@ -37,7 +37,7 @@ class GAN:
         self.compileT = True
     
     @tf.function
-    def train_epoch(self, dataset):
+    def train_epoch(self, dataset, epoch):
         if not self.compileT:
             raise Exception('GAN not compiled')
         for step_, (real_images) in tqdm(enumerate(dataset)):
@@ -108,7 +108,7 @@ class GAN:
                 # print(f'Get Image: {generated_sample_image[0].shape}')
                 compare = np.hstack([real_image, generated_sample_image])
                 # print(type(real_images[0]))
-                array_to_img(compare).save(f'results/{str(date.today())}_generated_image_{step_}.png')
+                array_to_img(compare).save(f'results/{str(date.today())}_generated_image_epoch{epoch}_step{step_}.png')
                 
             # ----------------------- DONE STEP
 
