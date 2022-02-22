@@ -10,7 +10,7 @@ def datagen(path, image_size):
     train_generator = train_datagen.flow_from_directory(
         path,
         target_size=image_size[:-1],
-        batch_size= 4,
+        batch_size= 8,
         class_mode=None, # since there is no inference data to train against
         shuffle=True,
     )

@@ -1,7 +1,7 @@
 import tensorflow as tf
 gpus = tf.config.experimental.list_physical_devices('GPU') 
-tf.config.experimental.set_memory_growth(gpus[0], True)
-tf.config.run_functions_eagerly(True)
+if len(gpus) > 0:
+    tf.config.experimental.set_memory_growth(gpus[0], True)
 
 from gan import GAN, enc, gen, disc, IMAGE_SIZE
 from tensorflow.keras.regularizers import L1

@@ -90,19 +90,7 @@ class GAN:
             enc_grads = enc_tape.gradient(enc_loss, self.encoder.trainable_weights)
             self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_weights))
 
-            if step_ % 50 == 0:
-                sample_image = real_images[:1]
-                # print(f'Sample Image: {sample_image.shape}')
-                encoded_sample_image = enc(sample_image)
-                # print(f'Encoded Image: {encoded_sample_image.shape}')
-                generated_sample_image = gen(encoded_sample_image)[0]
-                generated_sample_image *= 255
-                real_image = real_images[0] *255
-                # print(f'Generated Image: {generated_sample_image.shape}')
-                # print(f'Get Image: {generated_sample_image[0].shape}')
-                compare = np.hstack([real_image, generated_sample_image])
-                # print(type(real_images[0]))
-                array_to_img(compare).save(f'results/{str(date.today())}_generated_image_epoch{epoch}_step{step_}.png')
+
                 
             # ----------------------- DONE STEP
 
