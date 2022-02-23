@@ -25,12 +25,14 @@ for i in range(3):
     # print(f'Encoded Image: {encoded_sample_image.shape}')
     generated_sample_image = gen(encoded_sample_image)[0]
     gen.load_weights(f'gan_weights/generator_weights_{i}.h5')
-    generated_sample_image = gen(encoded_sample_image)[0]
+    generated_sample_image = gen(encoded_sample_image)[0].numpy()
+    generated_sample_image=(generated_sample_image - np.min(generated_sample_image)) / (np.max(generated_sample_image) - np.min(generated_sample_image))
 
     # generated_sample_image *= 255
     # print(f'Generated Image: {generated_sample_image.shape}')
     # print(f'Get Image: {generated_sample_image[0].shape}')
-    
+    # print('Real Image',(real_image.min()), (real_image.max()))
+    # print('Generated',(generated_sample_image.numpy().min()), (generated_sample_image.numpy().max()))
     compare = np.hstack([real_image, generated_sample_image])*255
     # print(type(real_images[0]))
     name = str(i)
