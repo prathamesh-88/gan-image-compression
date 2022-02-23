@@ -1,7 +1,7 @@
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.preprocessing.image import img_to_array
 
-batch_size = 8
+batch_size = 4
 def datagen(path, image_size):
     train_datagen = ImageDataGenerator(
         rescale=1./255,
