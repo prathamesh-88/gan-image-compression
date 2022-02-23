@@ -41,7 +41,7 @@ dblock3 = layers.Add()([block3(dblock2), dblock2])
 
 con2 = layers.Conv2D(32, kernel_size=3, strides=1, padding='same')(dblock3)
 le2 = layers.LeakyReLU()(con2)
-conT2 = layers.Conv2DTranspose(256, kernel_size=2, strides=2, padding='same')(le2)
+conT2 = layers.Conv2DTranspose(32, kernel_size=2, strides=2, padding='same')(le2)
 
 con3 = layers.Conv2D(16, kernel_size=3, strides=1, padding='same')(conT2)
 le3 = layers.LeakyReLU()(con3)
@@ -56,4 +56,4 @@ if __name__ == "__main__":
     model.summary()
     print(model.output_shape)
     from tensorflow.keras.utils import plot_model
-    plot_model(model, to_file='diagrams/generator.png', show_shapes=True)
+    # plot_model(model, to_file='diagrams/generator.png', show_shapes=True)
