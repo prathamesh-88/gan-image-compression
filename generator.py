@@ -48,7 +48,7 @@ le3 = layers.LeakyReLU()(con3)
 
 con4 = layers.Conv2D(3, kernel_size=3, strides=1, padding='same')(le3)
 out = tf.tanh(con4)
-out = tf.nn.relu(out)
+# out = tf.nn.relu(out)
 
 
 model = keras.Model(inputs=e_in1, outputs=out)

@@ -2,9 +2,13 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.preprocessing.image import img_to_array
 
 batch_size = 4
+def preprocess(train_image):
+    train_image = (train_image - 127.5) / 127.5
+    return train_image
+
 def datagen(path, image_size):
     train_datagen = ImageDataGenerator(
-        rescale=1./255,
+        preprocessing_function=preprocess,
     )
 
     train_generator = train_datagen.flow_from_directory(
