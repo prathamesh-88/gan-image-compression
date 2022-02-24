@@ -61,11 +61,11 @@ class GAN(keras.Model):
 
         with tf.GradientTape() as disc_tape:
             # output = self.discriminator(input_images, training=True)
-            r_out = self.discriminator(inp_x)
+            r_out = self.discriminator(inp_x, training=True)
             # r_out = self.discriminator([tf.expand_dims(i, axis=0) for i in inp_x], tf.expand_dims(label_real, axis=0)) # HACK: Use this if the above line doesn't work
             disc_loss = self.d_loss(label_real, r_out)
 
-            f_out = self.discriminator(inp_x_fake)
+            f_out = self.discriminator(inp_x_fake, training=True)
             # f_out = self.discriminator([tf.expand_dims(i, axis=0) for i in inp_x_fake], tf.expand_dims(label_fake, axis=0)) # HACK: Use this if the above line doesn't work
 
             disc_loss += self.d_loss(label_fake, f_out)
