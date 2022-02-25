@@ -1,6 +1,7 @@
 
 *.pyc
 .venv
+.ipynb_checkpoints
 main.ipynb
 __pycache__/
 results

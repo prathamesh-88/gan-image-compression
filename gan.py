@@ -1,6 +1,5 @@
 
 import os, time
-from tkinter.tix import IMAGE
 import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
@@ -13,7 +12,7 @@ DEBUG = True
 # Loading Dataset
 from gen_and_aug import datagen
 BATCH_SIZE = 4
-DATA_PATH = os.path.join(".", "image")
+DATA_PATH = os.path.join(".", "images")
 IMAGE_SIZE = (256, 256, 3)
 
 image_set = datagen(DATA_PATH, IMAGE_SIZE, BATCH_SIZE)
@@ -58,6 +57,7 @@ def discriminator_loss(real_output, fake_output):
 def generator_loss(fake_output, real_image, fake_image):
     loss = cross_entropy(tf.ones_like(fake_output), fake_output)
     rg = 2 * mean_absolute_error(real_image, fake_image)
+    return loss+rg
 
 # Optimizers
 from tensorflow.keras.optimizers import Adam as Opt
@@ -112,35 +112,37 @@ def train_step(real_images):
 def generate_and_save_images(generator, encoder, epoch, test_input):
     encoded = encoder(test_input)
     predictions = generator(encoded)
-
-    fig = plt.figure()
+    #strip
     count = predictions.shape[0]
     for i in range(count):
         plt.subplot(1, count, i + 1)
-        img = array_to_img((predictions[i] * 127.5 + 127.5) // 255)
+        img = array_to_img((predictions[i] * 127.5 + 127.5) / 255)
         plt.imshow(img)
         plt.axis('off')
 
-    plt.savefig('results/epoch_strip_{:04d}.png'.format(epoch))
+    plt.savefig('results/strips/epoch_strip_{:04d}.png'.format(epoch))
     plt.clf()
 
     compare = np.hstack([test_input[0], predictions[0]])
+    compare = compare * 127.5 + 127.5
+    array_to_img(compare).save(f"results/image_compare/{epoch:04d}_compare_image.png")
 
-    """
-    dir_ = os.path.join(".", "image", "train")
+    dir_ = os.path.join(".", "images", "train")
     image = os.path.join(dir_, os.listdir(dir_)[0])
-    ti = img_to_array(load_img(image)) / 127.5 - 1
-    pr = generator(encoder(tf.expand_dims(ti,axis=0)))[0]
+    image = load_img(image)
+    # image = tf.image.resize(image, (256, 256))
+    ti = img_to_array(image) / 127.5 - 1
+    pr = generator(encoder(tf.expand_dims(ti,axis=0), training=False), training=False)[0]
     compare = np.hstack([ti, pr])
-    """
+
 
     compare = compare * 127.5 + 127.5
-    array_to_img(compare).save(f"results/{epoch:04d}_compare_image.png")
+    array_to_img(compare).save(f"results/same_img/{epoch:04d}_gradual_compare.png")
 
 
 
-dir_ = os.path.join(".", "image", "train")
-steps_per_epoch = os.listdir(dir_) // BATCH_SIZE
+dir_ = os.path.join(".", "images", "train")
+steps_per_epoch = len(os.listdir(dir_)) // BATCH_SIZE
 
 def train(epochs):
     dataset = image_set
@@ -154,11 +156,10 @@ def train(epochs):
     print("DEBUG: Training Started!") if DEBUG else None
 
     for epoch in tqdm(range(epochs), desc='Epoch'):
-        print(f"Epoch {epoch} started!")
         gen_losses = []
         disc_losses = []
         start = time.perf_counter()
-        for i, image_batch in enumerate(tqdm(dataset, desc=f'Train Step of {epoch + 1} epoch')):
+        for i, image_batch in enumerate(tqdm(dataset, desc=f'Train Steps of Epoch {epoch + 1}')):
             gl, dl = train_step(image_batch)
             gen_losses.append(gl)
             disc_losses.append(dl)
@@ -171,10 +172,10 @@ def train(epochs):
         if (epoch + 1) % 3 == 0:
             checkpoint.save(file_prefix=CHECKPOINT_PREFIX)
         
-        print(f"Epoch {epoch + 1}: [Finished in {(time.perf_counter() - start):.2f} sec]")
         gl = sum(gen_losses) / len(gen_losses)
         dl = sum(disc_losses) / len(disc_losses)
-        print(f"Metrics: Avg. GLoss: {gl:.2f}, Avg. DLoss: {dl:.2f}")
+        print(f"\nEpoch {epoch + 1}: [Finished in {(time.perf_counter() - start):.2f} sec] \nMetrics: Avg. GLoss: {gl:.2f}, Avg. DLoss: {dl:.2f}\n")
+
     checkpoint.save(file_prefix=CHECKPOINT_PREFIX)
     
 

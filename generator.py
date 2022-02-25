@@ -8,7 +8,7 @@ from tensorflow.keras.models import Sequential
 INPUT_SHAPE = (64, 64, 27)
 OUTPUT_SHAPE = (256, 256, 3)
 
-e_in1 = layers.Input(shape=INPUT_SHAPE)
+e_in1 = layers.Input(shape=(None, None, 27))
 con1 = layers.Conv2D(64, kernel_size=3, strides=1, padding='same')(e_in1)
 le1 = layers.LeakyReLU()(con1)
 
