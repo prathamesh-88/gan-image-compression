@@ -1,136 +1,188 @@
-from inspect import trace
-import tensorflow as tf
-import tensorflow.keras as keras
-from tensorflow.keras import Model
-from tensorflow.keras.optimizers import Optimizer
-from tensorflow.keras.regularizers import l1
-from tensorflow.keras.losses import Loss
+
+import os, time
+from tkinter.tix import IMAGE
 import numpy as np
 from tqdm import tqdm
-from generator import INPUT_SHAPE as ENC_OUT_SHAPE, model as gen
-from encoder import Encoder
-from discriminator import IMAGE_SIZE, LATENT_CHANNELS, model as disc
-from tensorflow.keras.utils import array_to_img
-from datetime import date
-from PIL import Image
-import os
-from gen_and_aug import batch_size
+import tensorflow as tf
+from tensorflow import keras
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing.image import array_to_img, load_img, img_to_array
+DEBUG = True
 
-enc = Encoder(LATENT_CHANNELS, IMAGE_SIZE)
-class GAN(keras.Model):
-    def __init__(self, encoder: Model, generator: Model, discriminator: Model):
-        super(GAN, self).__init__()
-        self.encoder = encoder
-        self.generator = generator
-        self.discriminator = discriminator
+
+# Loading Dataset
+from gen_and_aug import datagen
+BATCH_SIZE = 4
+DATA_PATH = os.path.join(".", "image")
+IMAGE_SIZE = (256, 256, 3)
+
+image_set = datagen(DATA_PATH, IMAGE_SIZE, BATCH_SIZE)
+
+
+# Loading Models
+# from generator import INPUT_SHAPE, OUTPUT_SHAPE
+from discriminator import LATENT_CHANNELS
+from tensorflow.keras import Model
+def enc() -> Model:
+    from encoder import Encoder
+    input_shape = (None, *IMAGE_SIZE)
+    encoder = Encoder(LATENT_CHANNELS, IMAGE_SIZE)
+    encoder.build(input_shape)
+    return encoder
+
+def gen() -> Model:
+    from generator import model as generator
+    return generator
+
+def disc() -> Model:
+    from discriminator import model as discriminator
+    return discriminator
+
+encoder = enc()
+generator = gen()
+discriminator = disc()
+
+
+# GAN starts here
+# Setting optimizers and losses
+# Losses
+from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError
+cross_entropy = BinaryCrossentropy(from_logits=True)
+mean_absolute_error = MeanAbsoluteError()
+
+def discriminator_loss(real_output, fake_output):
+    real_loss = cross_entropy(tf.ones_like(real_output), real_output)
+    fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
+    return real_loss + fake_loss
+
+def generator_loss(fake_output, real_image, fake_image):
+    loss = cross_entropy(tf.ones_like(fake_output), fake_output)
+    rg = 2 * mean_absolute_error(real_image, fake_image)
+
+# Optimizers
+from tensorflow.keras.optimizers import Adam as Opt
+generator_optimizer = Opt(1e-4)
+discriminator_optimizer = Opt(1e-4)
+encoder_optimizer = Opt(1e-4)
+
+
+# Checkpoints Mechanism
+CHECKPOINT_DIR = os.path.join(".", "training_checkpoints")
+CHECKPOINT_PREFIX = os.path.join(CHECKPOINT_DIR, "ckpt")
+checkpoint = tf.train.Checkpoint(
+    generator_optimizer= generator_optimizer,
+    discriminator_optimizer= discriminator_optimizer,
+    encoder_optimizer= encoder_optimizer,
+    encoder= encoder, generator= generator,
+    discriminator= discriminator
+)
+
+manager = tf.train.CheckpointManager(checkpoint, CHECKPOINT_DIR, max_to_keep=3)
+
+
+# Training Functions
+@tf.function
+def train_step(real_images):
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as enc_tape:
+
+        real_encoded = encoder(real_images, training= True)
+        generated_images = generator(real_encoded, training= True)
+
+        real_in = [real_encoded, real_images]
+        fake_in = [real_encoded, generated_images]
+
+        real_out = discriminator(real_in, training= True)
+        fake_out = discriminator(fake_in, training= True)
+
+        disc_loss = discriminator_loss(real_out, fake_out)
+        gen_loss = generator_loss(fake_out, real_images, generated_images)
+
+    disc_grads = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
+    discriminator_optimizer.apply_gradients(zip(disc_grads, discriminator.trainable_variables))
+
+    gen_grads = gen_tape.gradient(gen_loss, generator.trainable_variables)
+    generator_optimizer.apply_gradients(zip(gen_grads, generator.trainable_variables))
+
+    enc_grads = enc_tape.gradient(gen_loss, encoder.trainable_variables)
+    encoder_optimizer.apply_gradients(zip(enc_grads, encoder.trainable_variables))
+
+    return (gen_loss, disc_loss)
+
+
+def generate_and_save_images(generator, encoder, epoch, test_input):
+    encoded = encoder(test_input)
+    predictions = generator(encoded)
+
+    fig = plt.figure()
+    count = predictions.shape[0]
+    for i in range(count):
+        plt.subplot(1, count, i + 1)
+        img = array_to_img((predictions[i] * 127.5 + 127.5) // 255)
+        plt.imshow(img)
+        plt.axis('off')
+
+    plt.savefig('results/epoch_strip_{:04d}.png'.format(epoch))
+    plt.clf()
+
+    compare = np.hstack([test_input[0], predictions[0]])
+
+    """
+    dir_ = os.path.join(".", "image", "train")
+    image = os.path.join(dir_, os.listdir(dir_)[0])
+    ti = img_to_array(load_img(image)) / 127.5 - 1
+    pr = generator(encoder(tf.expand_dims(ti,axis=0)))[0]
+    compare = np.hstack([ti, pr])
+    """
+
+    compare = compare * 127.5 + 127.5
+    array_to_img(compare).save(f"results/{epoch:04d}_compare_image.png")
+
+
+
+dir_ = os.path.join(".", "image", "train")
+steps_per_epoch = os.listdir(dir_) // BATCH_SIZE
+
+def train(epochs):
+    dataset = image_set
+    checkpoint.restore(tf.train.latest_checkpoint(CHECKPOINT_DIR))
+
+    if manager.latest_checkpoint:
+        print(f"INFO: {manager.latest_checkpoint} Restored")
+    else:
+        print("INFO: Starting from scratch")
+    
+    print("DEBUG: Training Started!") if DEBUG else None
+
+    for epoch in tqdm(range(epochs), desc='Epoch'):
+        print(f"Epoch {epoch} started!")
+        gen_losses = []
+        disc_losses = []
+        start = time.perf_counter()
+        for i, image_batch in enumerate(tqdm(dataset, desc=f'Train Step of {epoch + 1} epoch')):
+            gl, dl = train_step(image_batch)
+            gen_losses.append(gl)
+            disc_losses.append(dl)
+            if i >= steps_per_epoch:
+                break
+        dataset.on_epoch_end()
+
+        generate_and_save_images(generator, encoder, epoch + 1, dataset[0])
+
+        if (epoch + 1) % 3 == 0:
+            checkpoint.save(file_prefix=CHECKPOINT_PREFIX)
+        
+        print(f"Epoch {epoch + 1}: [Finished in {(time.perf_counter() - start):.2f} sec]")
+        gl = sum(gen_losses) / len(gen_losses)
+        dl = sum(disc_losses) / len(disc_losses)
+        print(f"Metrics: Avg. GLoss: {gl:.2f}, Avg. DLoss: {dl:.2f}")
+    checkpoint.save(file_prefix=CHECKPOINT_PREFIX)
+    
+
+
+
+
     
     
-    def compile(self, optimizers: dict[str, Optimizer], losses: dict[str, Loss]):
-        super(GAN, self).compile()
-        self.e_optimizer = optimizers['encoder']
-        self.g_optimizer = optimizers['generator']
-        self.d_optimizer = optimizers['discriminator']
-        self.b_loss = losses['BCE']
-        self.l_loss = losses['L1']
-        self.d_loss = losses['discriminator']
-        self.enc_loss = keras.metrics.Mean(name='e_loss')
-        self.gen_loss = keras.metrics.Mean(name='g_loss')
-        self.disc_loss = keras.metrics.Mean(name='d_loss')
-    
-        
-    def call(self,inputs):
-        return self.generator(self.encoder(inputs))
-            
-    @property
-    def metrics(self):
-        return [self.gen_loss, self.enc_loss, self.disc_loss]
-    
-    def train_step(self, real_images):
-        fake_images = self.generator(self.encoder(real_images), training=True)
-
-        inp_x = [self.encoder(real_images), real_images]
-
-        label_real = tf.random.uniform(minval=.855, maxval=.999, shape=[batch_size, 1])
-
-        inp_x_fake = [self.encoder(real_images), fake_images]
-        label_fake = tf.random.uniform(minval=0.005, maxval=.155, shape=[batch_size, 1])
-
-        input_images = list(map(lambda x: tf.concat([x[0], x[1]], axis=0) ,zip(inp_x, inp_x_fake)))
-        label = tf.concat([label_real, label_fake], axis=0)
-
-
-        with tf.GradientTape() as disc_tape:
-            # output = self.discriminator(input_images, training=True)
-            r_out = self.discriminator(inp_x, training=True)
-            # r_out = self.discriminator([tf.expand_dims(i, axis=0) for i in inp_x], tf.expand_dims(label_real, axis=0)) # HACK: Use this if the above line doesn't work
-            disc_loss = self.d_loss(label_real, r_out)
-
-            f_out = self.discriminator(inp_x_fake)
-            # f_out = self.discriminator([tf.expand_dims(i, axis=0) for i in inp_x_fake], tf.expand_dims(label_fake, axis=0)) # HACK: Use this if the above line doesn't work
-
-            disc_loss += self.d_loss(label_fake, f_out)
-
-        disc_grads = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
-        self.d_optimizer.apply_gradients(zip(disc_grads, self.discriminator.trainable_variables))
-
-        # ------------------- Disc Training End
-
-        label = tf.random.uniform(minval=.895, maxval=.999, shape=[batch_size, 1])
-
-        with tf.GradientTape() as gen_tape:
-            enc_img = self.encoder(real_images, training=True)
-            fake_images = self.generator(enc_img, training=True)
-            inp_x_fake = [enc_img, fake_images]
-            output = self.discriminator(inp_x_fake, training=True)
-            # print(f"{output.shape} ~ {label.shape}")
-            # print(f"{real_images.shape} ~ {tf.reshape(fake_images, [None, -1])} = {self.l_loss(real_images, fake_images).shape}")
-            lr_i = tf.reshape(real_images, [batch_size, -1])
-            lf_i = tf.reshape(fake_images, [batch_size, -1])
-            # print(lr_i.shape, lf_i.shape)
-            gen_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
-
-
-        gen_grads = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
-        self.g_optimizer.apply_gradients(zip(gen_grads, self.generator.trainable_variables))
-
-
-        with tf.GradientTape() as enc_tape:
-            enc_img = self.encoder(real_images, training=True)
-            fake_images = self.generator(enc_img, training=True)
-            inp_x_fake = [enc_img, fake_images]
-
-            output = self.discriminator(inp_x_fake, training=True)
-            lr_i = tf.reshape(real_images, [batch_size, -1])
-            lf_i = tf.reshape(fake_images, [batch_size, -1])
-            enc_loss = self.b_loss(output, label) + 2 * self.l_loss(lr_i, lf_i)
-        
-        enc_grads = enc_tape.gradient(enc_loss, self.encoder.trainable_variables)
-        self.e_optimizer.apply_gradients(zip(enc_grads, self.encoder.trainable_variables))
-        
-        self.disc_loss.update_state(disc_loss)
-        self.gen_loss.update_state(gen_loss)
-        self.enc_loss.update_state(enc_loss)
-        
-        return {
-            'g_loss': self.gen_loss.result(),
-            'e_loss': self.enc_loss.result(),
-            'd_loss': self.disc_loss.result(),
-        }
-
-                
-            # ----------------------- DONE STEP
-class GANCallBack(keras.callbacks.Callback):
-    def on_epoch_begin(self, epoch, logs=None):
-        print("Screw it! I'm going to train my GAN!")
-        self.model.generator.save_weights(f"gan_weights/generator_weights_{epoch}.h5")
-        self.model.encoder.save_weights(f"gan_weights/encoder_weights_{epoch}.h5")
-        self.model.discriminator.save_weights(f"gan_weights/discriminator_weights_{epoch}.h5")
-        
-
-
-
-
-        
 
 
 

@@ -55,7 +55,7 @@ dd2 = layers.Dense(100, activation='sigmoid')(dd1)
 dd3 = layers.Dense(1, activation='sigmoid')(dd2)
 
 
-model = Model(inputs=[lv, ri], outputs=dd3)
+model = Model(inputs=[lv, ri], outputs=dd3, name="discriminator")
 
 if __name__ == "__main__":
     print(model.summary())

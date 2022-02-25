@@ -51,7 +51,7 @@ out = tf.tanh(con4)
 # out = tf.nn.relu(out)
 
 
-model = keras.Model(inputs=e_in1, outputs=out)
+model = keras.Model(inputs=e_in1, outputs=out, name="generator")
 
 if __name__ == "__main__":
     model.summary()
