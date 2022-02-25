@@ -1,7 +1,7 @@
 
 *.pyc
 .venv
-*.ipynb
+main.ipynb
 __pycache__/
 results
 images
@@ -10,3 +10,4 @@ images.*
 gen
 gen_old
 old
+training_checkpoints

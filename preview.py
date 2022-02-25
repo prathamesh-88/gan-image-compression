@@ -25,8 +25,8 @@ for i in range(20):
     generated_sample_image = gen(encoded_sample_image)[0]
     gen.load_weights(f'gan_weights/generator_weights_{i}.h5')
     generated_sample_image = gen(encoded_sample_image)[0].numpy()
-    print('Generated Image',generated_sample_image.min(), generated_sample_image.max())
-    print('Real Image', real_image.min(), real_image.max())
+    # print('Generated Image',generated_sample_image.min(), generated_sample_image.max())
+    # print('Real Image', real_image.min(), real_image.max())
 
     # generated_sample_image *= 255
     # print(f'Generated Image: {generated_sample_image.shape}')
@@ -35,6 +35,8 @@ for i in range(20):
     # print('Generated',(generated_sample_image.numpy().min()), (generated_sample_image.numpy().max()))
     compare = np.hstack([real_image, generated_sample_image])
     compare = compare*127.5 + 127.5
+    # print('Compare', compare.min(), compare.max())
+    
     # print(type(real_images[0]))
     name = str(i)
     array_to_img(compare).save(f'results/{str(date.today())}_{name}_generated_image.png')

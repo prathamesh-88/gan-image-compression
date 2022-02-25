@@ -46,7 +46,7 @@ class GAN(keras.Model):
         return [self.gen_loss, self.enc_loss, self.disc_loss]
     
     def train_step(self, real_images):
-        fake_images = self.generator(self.encoder(real_images))
+        fake_images = self.generator(self.encoder(real_images), training=True)
 
         inp_x = [self.encoder(real_images), real_images]
 
@@ -65,7 +65,7 @@ class GAN(keras.Model):
             # r_out = self.discriminator([tf.expand_dims(i, axis=0) for i in inp_x], tf.expand_dims(label_real, axis=0)) # HACK: Use this if the above line doesn't work
             disc_loss = self.d_loss(label_real, r_out)
 
-            f_out = self.discriminator(inp_x_fake, training=True)
+            f_out = self.discriminator(inp_x_fake)
             # f_out = self.discriminator([tf.expand_dims(i, axis=0) for i in inp_x_fake], tf.expand_dims(label_fake, axis=0)) # HACK: Use this if the above line doesn't work
 
             disc_loss += self.d_loss(label_fake, f_out)
