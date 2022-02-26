@@ -6,6 +6,10 @@ def preprocess(train_image):
     train_image = (train_image - 127.5) / 127.5
     return train_image
 
+def postprocess(image):
+    image = image * 127.5 + 127.5
+    return image
+
 def datagen(path, image_size, batch_size = 4):
     train_datagen = ImageDataGenerator(
         preprocessing_function=preprocess,
