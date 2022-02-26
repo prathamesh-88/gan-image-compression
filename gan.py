@@ -182,8 +182,6 @@ def train(epochs):
 
 
 
-    
-    
-
-
-
+def get_models():
+    checkpoint.restore(tf.train.latest_checkpoint(CHECKPOINT_DIR))
+    return encoder, generator
