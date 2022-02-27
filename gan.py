@@ -10,7 +10,7 @@ DEBUG = True
 
 
 # Loading Dataset
-from gen_and_aug import datagen
+from gen_and_aug import datagen, preprocess, postprocess
 BATCH_SIZE = 4
 DATA_PATH = os.path.join(".", "images")
 IMAGE_SIZE = (256, 256, 3)
@@ -41,6 +41,10 @@ encoder = enc()
 generator = gen()
 discriminator = disc()
 
+
+def introduce_noise(latent_point):
+    return preprocess(tf.floor(postprocess(latent_point)))
+    # TODO: Introdcue this noise in the training loop after the encoding is done
 
 # GAN starts here
 # Setting optimizers and losses
