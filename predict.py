@@ -52,6 +52,21 @@ def generate_image(latent_tensor):
         return postprocess(generator(latent_tensor))
 
 
+def generate_debug(latent_tensor, grayscale=True):
+    if len(latent_tensor.shape) == 3:
+        if not grayscale:
+            images = [latent_tensor[:, :, i:i+3] for i in range(0, latent_tensor.shape[-1], 3)]
+            images = [np.vstack(images[i:i+3]) for i in range(0, len(images), 3)]
+            images = np.hstack(images)
+            array_to_img(images).save("debug_.png")
+        else:
+            images = [latent_tensor[:, :, i:i+1] for i in range(0, latent_tensor.shape[-1])]
+            images = [np.vstack(images[i:i+3]) for i in range(0, len(images), 3)]
+            images = np.hstack(images)
+            array_to_img(images).save("debug_g.png")
+
+        
+
 
 if __name__ == "__main__":
     import argparse
@@ -64,10 +79,12 @@ if __name__ == "__main__":
     args.add_argument('-o', '--output', required=True, action='store', help='path to output file')
 
     args.add_argument('-r', '--replicate', action='store_true', help='generates final form of image')
+    args.add_argument('-v', '--verbose', action='store_true', help='verbose output')
     
     arguments = args.parse_args()
 
     input_file: str = arguments.input
+    verbose = arguments.verbose
     if not os.path.isfile(input_file):
         raise FileNotFoundError(f"{input_file} not found!")
 
@@ -75,6 +92,8 @@ if __name__ == "__main__":
         image = load_img(input_file)
         image = img_to_array(image)
         data = generate_latent_space(image)
+        generate_debug(data) if verbose else None
+        generate_debug(data, False) if verbose else None
         image = generate_image(data)
         image = array_to_img(image)
         image.save(arguments.output)

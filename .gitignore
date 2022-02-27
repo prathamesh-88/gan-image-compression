@@ -12,3 +12,4 @@ gen
 gen_old
 old
 training_checkpoints
+debug_*
