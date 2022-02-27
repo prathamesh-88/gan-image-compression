@@ -89,7 +89,11 @@ class Encoder(keras.Model):
         x = layers.Input(shape=(self.dim))
         return keras.Model(inputs=[x], outputs=self.call(x))
         
-        
+def build_encoder(LATENT_DIM, IMAGE_SHAPE):
+    encoder = Encoder(encoder_channels=LATENT_DIM, input_shape=IMAGE_SHAPE[1:])
+    encoder.build(IMAGE_SHAPE)
+    return encoder
+
 if __name__=='__main__':
     input_shape = (None, 256, 256,3)
     encoder = Encoder(input_shape=input_shape[1:])

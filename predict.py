@@ -1,5 +1,13 @@
 
-from gan import encoder, generator, discriminator, generator_optimizer, encoder_optimizer, discriminator_optimizer, image_set
+# from gan import encoder, generator, discriminator, generator_optimizer, encoder_optimizer, discriminator_optimizer
+from generator import model as generator
+from discriminator import model as discriminator, LATENT_CHANNELS, IMAGE_SIZE
+from encoder import build_encoder
+encoder = build_encoder(LATENT_CHANNELS, (None, *IMAGE_SIZE))
+
+from tensorflow.keras.optimizers import Adam
+generator_optimizer, encoder_optimizer, discriminator_optimizer = Adam(1e-4), Adam(1e-4), Adam(1e-4)
+
 import tensorflow as tf
 from gen_and_aug import preprocess, postprocess
 from tensorflow.keras.preprocessing.image import array_to_img, load_img, img_to_array
