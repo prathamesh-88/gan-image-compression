@@ -53,8 +53,10 @@ def introduce_noise(latent_point):
         ),
         vec_127
     )
+
     floored = tf.cast(postprocessed, dtype=tf.uint8)
     floored = tf.cast(postprocessed, dtype=tf.float32)
+
     preprocessed = tf.divide(
         tf.subtract(
             floored,
@@ -62,6 +64,7 @@ def introduce_noise(latent_point):
         ),
         vec_127
     )
+    
     return preprocessed
 
 # GAN starts here
@@ -72,17 +75,18 @@ cross_entropy = BinaryCrossentropy(from_logits=True)
 mean_absolute_error = MeanAbsoluteError()
 
 def discriminator_loss(real_output, fake_output):
-    real_labels = tf.random.uniform(minval=0.855, maxval=0.999,shape=[BATCH_SIZE, 1])
-    fake_labels = tf.random.uniform(minval=0.001, maxval=0.145,shape=[BATCH_SIZE, 1])
+
+    real_labels = tf.random.uniform(minval=0.855, maxval=0.999,shape=tf.shape(real_output))
+    fake_labels = tf.random.uniform(minval=0.001, maxval=0.145,shape=tf.shape(fake_output))
     real_loss   = cross_entropy(real_labels, real_output)
     fake_loss   = cross_entropy(fake_labels, fake_output)
     return real_loss + fake_loss
 
 def generator_loss(fake_output, real_image, fake_image):
-    labels = tf.random.uniform(minval=0.855, maxval=0.999,shape=[BATCH_SIZE, 1])
+    labels = tf.random.uniform(minval=0.855, maxval=0.999,shape=tf.shape(fake_output))
     loss = cross_entropy(labels, fake_output)
     rg = 2 * mean_absolute_error(real_image, fake_image)
-    return loss+rg
+    return loss + rg
 
 # Optimizers
 from tensorflow.keras.optimizers import Adam as Opt
