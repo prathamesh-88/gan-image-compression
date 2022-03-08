@@ -40,10 +40,10 @@ encoder = enc()
 generator = gen()
 discriminator = disc()
 
-
+@tf.function
 def introduce_noise(latent_point):
     # return preprocess(tf.cast(postprocess(latent_point), tf.uint8))
-    vec_127 = tf.fill(shape=tf.shape(latent_point), value=127.5) # Try the line below if this doesn't work
+    vec_127 = tf.fill(tf.shape(latent_point), 127.5) # Try the line below if this doesn't work
     # vec_127 = tf.constant(127.5, shape=tf.shape(latent_point), dtype=tf.float32)
 
     postprocessed = tf.add(
@@ -53,7 +53,8 @@ def introduce_noise(latent_point):
         ),
         vec_127
     )
-    floored = tf.floor(postprocessed)
+    floored = tf.cast(postprocessed, dtype=tf.uint8)
+    floored = tf.cast(postprocessed, dtype=tf.float32)
     preprocessed = tf.divide(
         tf.subtract(
             floored,
@@ -109,7 +110,8 @@ manager = tf.train.CheckpointManager(checkpoint, CHECKPOINT_DIR, max_to_keep=3)
 def train_step(real_images):
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as enc_tape:
 
-        real_encoded = introduce_noise(encoder(real_images, training= True))
+        real_encoded = encoder(real_images, training= True)
+        real_encoded = introduce_noise(real_encoded)
         generated_images = generator(real_encoded, training= True)
 
         real_in = [real_encoded, real_images]
