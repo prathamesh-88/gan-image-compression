@@ -42,8 +42,26 @@ discriminator = disc()
 
 
 def introduce_noise(latent_point):
-    return preprocess(tf.cast(postprocess(latent_point), tf.uint8))
-    # TODO: Introdcue this noise in the training loop after the encoding is done
+    # return preprocess(tf.cast(postprocess(latent_point), tf.uint8))
+    vec_127 = tf.fill(shape=tf.shape(latent_point), value=127.5) # Try the line below if this doesn't work
+    # vec_127 = tf.constant(127.5, shape=tf.shape(latent_point), dtype=tf.float32)
+
+    postprocessed = tf.add(
+        tf.multiply(
+            latent_point, 
+            vec_127
+        ),
+        vec_127
+    )
+    floored = tf.floor(postprocessed)
+    preprocessed = tf.divide(
+        tf.subtract(
+            floored,
+            vec_127
+        ),
+        vec_127
+    )
+    return preprocessed
 
 # GAN starts here
 # Setting optimizers and losses
