@@ -5,12 +5,11 @@ from tqdm import tqdm
 import tensorflow as tf
 from tensorflow import keras
 import matplotlib.pyplot as plt
-from tensorflow.keras.preprocessing.image import array_to_img, load_img, img_to_array
-DEBUG = True
-
-
-# Loading Dataset
 from gen_and_aug import datagen, preprocess, postprocess
+from tensorflow.keras.preprocessing.image import array_to_img, load_img, img_to_array
+
+
+DEBUG = True
 BATCH_SIZE = 4
 DATA_PATH = os.path.join(".", "images")
 IMAGE_SIZE = (256, 256, 3)
@@ -43,7 +42,7 @@ discriminator = disc()
 
 
 def introduce_noise(latent_point):
-    return preprocess(tf.floor(postprocess(latent_point)))
+    return preprocess(tf.cast(postprocess(latent_point), tf.uint8))
     # TODO: Introdcue this noise in the training loop after the encoding is done
 
 # GAN starts here
@@ -54,12 +53,15 @@ cross_entropy = BinaryCrossentropy(from_logits=True)
 mean_absolute_error = MeanAbsoluteError()
 
 def discriminator_loss(real_output, fake_output):
-    real_loss = cross_entropy(tf.ones_like(real_output), real_output)
-    fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
+    real_labels = tf.random.uniform(minval=0.855, maxval=0.999,shape=[BATCH_SIZE, 1])
+    fake_labels = tf.random.uniform(minval=0.001, maxval=0.145,shape=[BATCH_SIZE, 1])
+    real_loss   = cross_entropy(real_labels, real_output)
+    fake_loss   = cross_entropy(fake_labels, fake_output)
     return real_loss + fake_loss
 
 def generator_loss(fake_output, real_image, fake_image):
-    loss = cross_entropy(tf.ones_like(fake_output), fake_output)
+    labels = tf.random.uniform(minval=0.855, maxval=0.999,shape=[BATCH_SIZE, 1])
+    loss = cross_entropy(labels, fake_output)
     rg = 2 * mean_absolute_error(real_image, fake_image)
     return loss+rg
 
@@ -89,7 +91,7 @@ manager = tf.train.CheckpointManager(checkpoint, CHECKPOINT_DIR, max_to_keep=3)
 def train_step(real_images):
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as enc_tape:
 
-        real_encoded = encoder(real_images, training= True)
+        real_encoded = introduce_noise(encoder(real_images, training= True))
         generated_images = generator(real_encoded, training= True)
 
         real_in = [real_encoded, real_images]
@@ -150,7 +152,7 @@ steps_per_epoch = len(os.listdir(dir_)) // BATCH_SIZE
 
 def train(epochs):
     dataset = image_set
-    checkpoint.restore(tf.train.latest_checkpoint(CHECKPOINT_DIR))
+    checkpoint.restore(tf.train.latest_checkpoint(CHECKPOINT_DIR)).expect_partial()
 
     if manager.latest_checkpoint:
         print(f"INFO: {manager.latest_checkpoint} Restored")
