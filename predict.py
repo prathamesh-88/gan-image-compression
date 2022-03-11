@@ -92,8 +92,12 @@ if __name__ == "__main__":
         image = load_img(input_file)
         image = img_to_array(image)
         data = generate_latent_space(image)
+        data = postprocess(data)
+        data = tf.cast(data, tf.uint8)
         generate_debug(data) if verbose else None
         generate_debug(data, False) if verbose else None
+        data = tf.cast(data, tf.float32)
+        data = preprocess(data)
         image = generate_image(data)
         image = array_to_img(image)
         image.save(arguments.output)
