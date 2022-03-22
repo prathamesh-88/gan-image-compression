@@ -52,18 +52,27 @@ def generate_image(latent_tensor):
         return postprocess(generator(latent_tensor))
 
 
-def generate_debug(latent_tensor, grayscale=True):
+def generate_latent_image(latent_tensor, grayscale=True, debug=True):
     if len(latent_tensor.shape) == 3:
         if not grayscale:
             images = [latent_tensor[:, :, i:i+3] for i in range(0, latent_tensor.shape[-1], 3)]
             images = [np.vstack(images[i:i+3]) for i in range(0, len(images), 3)]
             images = np.hstack(images)
-            array_to_img(images).save("debug_.png")
+            img = array_to_img(images)
+            if debug:
+                img.save("debug_.png")
+            else:
+                return array_to_img(images)
+
         else:
             images = [latent_tensor[:, :, i:i+1] for i in range(0, latent_tensor.shape[-1])]
             images = [np.vstack(images[i:i+3]) for i in range(0, len(images), 3)]
             images = np.hstack(images)
-            array_to_img(images).save("debug_g.png")
+            img = array_to_img(images)
+            if debug:
+                img.save("debug_g.png")
+            else:
+                return img
 
         
 
@@ -94,8 +103,8 @@ if __name__ == "__main__":
         data = generate_latent_space(image)
         data = postprocess(data)
         data = tf.cast(data, tf.uint8)
-        generate_debug(data) if verbose else None
-        generate_debug(data, False) if verbose else None
+        generate_latent_image(data) if verbose else None
+        generate_latent_image(data, False) if verbose else None
         data = tf.cast(data, tf.float32)
         data = preprocess(data)
         image = generate_image(data)

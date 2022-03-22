@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    {% if output_image == None %}
+        <iframe src="https://giphy.com/embed/xTkcEQACH24SMPxIQg" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+        <script>
+            setTimeout(function() {
+                window.location.reload();
+            }, 5000);
+        </script>
+    {% else %}
+        <img src="{{ url_for('images', path='/{}.png'.format(input_image)) }}" alt="" srcset="">
+        <img src="{{ url_for('images', path='/{}.png'.format(output_image)) }}" alt="" srcset="">
+    {% endif %}
+
+
+
+{% endblock %}
