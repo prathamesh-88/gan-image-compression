@@ -2,18 +2,19 @@
 {% block title %}
     Home Page 😺
 {% endblock %}
-{% block links %}
-<link rel="stylesheet" href="{{ url_for('static', path='/index.css') }}">
-{% endblock %}
+
 {% block content %}
-<div class="content">
-    <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="ImageFile">Image</label>
-            <input name="image" type="file" class="form-control" id="ImageFile" aria-describedby="emailHelp" placeholder="Image">
-            <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+<div class="main-container">
+    <div class="form">
+        <h1 class="heading">Compress</h1>
+        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+            <div class="form-element">
+                <label for="file">Upload an image file you want to compress!</label>
+                <input id="file" name="image"  type="file" accept="image/jpg, image/jpeg, image/png ">
+            </div>
+            <button type="submit">Compress</button>
+        </form>
+    </div>
 </div>
+
 {% endblock %}

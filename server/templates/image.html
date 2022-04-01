@@ -2,15 +2,43 @@
 
 {% block content %}
     {% if output_image == None %}
-        <iframe src="https://giphy.com/embed/xTkcEQACH24SMPxIQg" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+    <div class="iframe-container">
+        <iframe src="https://giphy.com/embed/xTkcEQACH24SMPxIQg" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+    </div>
         <script>
             setTimeout(function() {
                 window.location.reload();
-            }, 5000);
+            }, 7000);
         </script>
     {% else %}
-        <img src="{{ url_for('images', path='/{}.png'.format(input_image)) }}" alt="" srcset="">
-        <img src="{{ url_for('images', path='/{}.png'.format(output_image)) }}" alt="" srcset="">
+        <div class="main-container">
+            <div class="results">
+                <div class="heading">
+                    <h1 class="heading">Compress</h1>
+                </div>
+                <div class="row-1">
+                    <div class="image">
+                        <img src="{{ url_for('images', path='/{}.png'.format(input_image)) }}" alt="">
+                        <p><b>Real Image</b></p>
+                    </div>
+                    <div class="image">
+                        <img src="{{ url_for('images', path='/{}.png'.format(output_image)) }}" alt="">
+                        <p><b>Generated Image</b></p>
+                    </div>
+                </div>
+                <div class="row-2">
+                    <h3>Comparing Criteria</h3>
+                    <ol>
+                        <li><b>Compression ratio: </b></li>
+                        <li><b>Compression ratio: </b></li>
+                        <li><b>Compression ratio: </b></li>
+                        <li><b>Compression ratio: </b></li>
+                        <li><b>Compression ratio: </b></li>
+    
+                    </ol>
+                </div>
+            </div>
+        </div>
     {% endif %}
 
 
