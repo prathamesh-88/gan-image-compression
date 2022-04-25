@@ -6,6 +6,7 @@ from hashlib import sha256
 from driver import compress, decompress
 from PIL import Image
 import os
+from helper import get_measures
 
 if not os.path.exists("images"):
     os.mkdir("images")
@@ -16,6 +17,7 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount('/images', StaticFiles(directory='images'), name='images')
 exposed_files = {}
+image_data = {}
 
 def generate_image(file, image_hash):
     image = Image.open(file)
@@ -24,6 +26,12 @@ def generate_image(file, image_hash):
     output_hash = sha256(output.tobytes()).hexdigest()
     output.save("images/" + output_hash + ".png")
     exposed_files[image_hash] = output_hash
+    ssim, psnr, mse = get_measures(image_hash, output_hash)
+    image_data[image_hash] = {
+        "ssim": round(ssim, 2),
+        "psnr": round(psnr, 2),
+        "mse": mse,
+    }
     
 
 
@@ -46,14 +54,17 @@ async def upload(background_tasks: BackgroundTasks, image: UploadFile = File(...
 @app.get("/image/{image_hash}")
 async def get_image(request: Request, image_hash: str):
     if image_hash in exposed_files:
+
         return templates.TemplateResponse("image.html", {
             "request": request,
             "input_image": image_hash,
             "output_image": exposed_files[image_hash],
+            "data": image_data[image_hash],
         })
     else:
         return templates.TemplateResponse("image.html", {
             "request": request,
             "input_image": image_hash,
             "output_image": None,
+            "data": None,
         })
