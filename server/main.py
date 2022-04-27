@@ -30,7 +30,7 @@ def generate_image(file, image_hash):
     image_data[image_hash] = {
         "ssim": round(ssim, 2),
         "psnr": round(psnr, 2),
-        "mse": mse,
+        "mse": round(mse, 5),
     }
     
 
