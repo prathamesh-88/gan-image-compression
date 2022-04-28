@@ -121,6 +121,8 @@ if __name__ == "__main__":
     if d:
         with open(input_file, "rb") as f:
             data = np.load(f, allow_pickle=True)
+        data = tf.cast(data, tf.float32)
+        data = preprocess(data)
         image = generate_image(data)
         image = array_to_img(image)
         image.save(arguments.output)
@@ -128,7 +130,9 @@ if __name__ == "__main__":
         image = load_img(input_file)
         image = img_to_array(image)
         data = generate_latent_space(image)
+        data = postprocess(data)
+        data = tf.cast(data, tf.uint8)
         with open(arguments.output, "wb") as f:
-            np.save(f, data.numpy())
+            np.savez(f, data.numpy())
     
     
