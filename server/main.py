@@ -53,7 +53,7 @@ async def upload(background_tasks: BackgroundTasks, image: UploadFile = File(...
 
 @app.get("/image/{image_hash}")
 async def get_image(request: Request, image_hash: str):
-    if image_hash in exposed_files:
+    if image_hash in exposed_files and image_hash in image_data:
 
         return templates.TemplateResponse("image.html", {
             "request": request,

@@ -56,8 +56,8 @@ def generate_latent_image(latent_tensor, grayscale=True, debug=True):
     if len(latent_tensor.shape) == 3:
         if not grayscale:
             images = [latent_tensor[:, :, i:i+3] for i in range(0, latent_tensor.shape[-1], 3)]
-            images = [np.vstack(images[i:i+3]) for i in range(0, len(images), 3)]
-            images = np.hstack(images)
+            images = [np.hstack(images[i:i+3]) for i in range(0, len(images), 3)]
+            images = np.vstack(images)
             img = array_to_img(images)
             if debug:
                 img.save("debug_.png")
@@ -74,6 +74,19 @@ def generate_latent_image(latent_tensor, grayscale=True, debug=True):
             else:
                 return img
 
+def div_images(image):
+    # Split the image into 9 regions and return the list of the regions
+    image = img_to_array(image)
+    print(image.shape)
+    h, w = image.shape[:2]
+    s = int(np.floor(h/3)), int(np.floor(w/3))
+    # return the i
+    return [image[i*s[0]:(i+1)*s[0], j*s[1]:(j+1)*s[1], :] for i in range(3) for j in range(3)]
+
+def merge_list_over_axis(img):
+    # merge the list over axis -1
+    print([i.shape for i in img])
+    return np.concatenate(img, axis=-1)
         
 
 
@@ -119,9 +132,11 @@ if __name__ == "__main__":
         raise TypeError("both operations absent or present")
     
     if d:
-        with open(input_file, "rb") as f:
-            data = np.load(f, allow_pickle=True)
-        data = tf.cast(data, tf.float32)
+        img = load_img(input_file)
+        new = div_images(img)
+        new = merge_list_over_axis(new)
+        print(new.shape)
+        data = tf.cast(new, tf.float32)
         data = preprocess(data)
         image = generate_image(data)
         image = array_to_img(image)
@@ -132,7 +147,8 @@ if __name__ == "__main__":
         data = generate_latent_space(image)
         data = postprocess(data)
         data = tf.cast(data, tf.uint8)
-        with open(arguments.output, "wb") as f:
-            np.savez(f, data.numpy())
+        img = generate_latent_image(data, grayscale=False, debug=False)
+        img.save(arguments.output)
+        
     
     

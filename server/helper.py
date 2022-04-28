@@ -7,11 +7,11 @@ def get_measures(image_input, image_output):
     s1, s2 = sum(img1.shape), sum(img2.shape)
     try:
         if s1 > s2:
-            psnr =  tf.image.psnr(img1[:img2.shape[0], :img2.shape[1], :], img2, max_val=255).numpy()
-            img1 = tf.expand_dims(img1[:img2.shape[0], :img2.shape[1], :], axis=0)
+            psnr =  tf.image.psnr(img1[img1.shape[0] - img2.shape[0]:, img2.shape[1] - img2.shape[1]:, :], img2, max_val=255).numpy()
+            img1 = tf.expand_dims(img1[img1.shape[0] - img2.shape[0]:, img2.shape[1] - img2.shape[1]:, :], axis=0)
 
         else:
-            psnr =  tf.image.psnr(img1, img2[:img1.shape[0], :img1.shape[1], :], max_val=255).numpy()
+            psnr =  tf.image.psnr(img1, img2[img2.shape[0] - img1.shape[0]:, img2.shape[1] - img1.shape[1]:, :], max_val=255).numpy()
             img2 = tf.expand_dims(img2[:img1.shape[0], :img1.shape[1], :], axis=0)
     except:
         psnr = -1
